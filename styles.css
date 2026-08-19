@@ -1,0 +1,193 @@
+/* Solar Graph — 3D orbital graph view */
+
+.solar-graph-content {
+	padding: 0;
+	overflow: hidden;
+}
+
+.solar-graph-stage {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	background: #05060e;
+	outline: none;
+}
+
+.solar-graph-canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+	cursor: grab;
+}
+
+.solar-graph-canvas:active {
+	cursor: grabbing;
+}
+
+.solar-graph-canvas.is-hovering,
+.solar-graph-canvas.is-hovering:active {
+	cursor: pointer;
+}
+
+/* --- labels ------------------------------------------------------------- */
+
+.solar-graph-labels {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+.solar-graph-label {
+	position: absolute;
+	top: 0;
+	left: 0;
+	white-space: nowrap;
+	font-size: 11px;
+	line-height: 1.2;
+	color: #dbe4f7;
+	text-shadow: 0 0 6px rgba(0, 0, 0, 0.95), 0 1px 2px rgba(0, 0, 0, 0.9);
+	will-change: transform;
+}
+
+.solar-graph-label.is-star {
+	font-size: 13px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	color: #ffe7b0;
+}
+
+.solar-graph-label.is-unresolved {
+	color: #8b93a8;
+	font-style: italic;
+}
+
+.solar-graph-label.is-featured {
+	font-weight: 600;
+	color: #ffffff;
+}
+
+/* --- toolbar ----------------------------------------------------------- */
+
+.solar-graph-toolbar {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 6px;
+	border-radius: 8px;
+	background: rgba(12, 15, 28, 0.72);
+	border: 1px solid rgba(150, 170, 220, 0.18);
+	backdrop-filter: blur(6px);
+	z-index: 2;
+}
+
+.solar-graph-segmented {
+	display: flex;
+	border-radius: 6px;
+	overflow: hidden;
+	border: 1px solid rgba(150, 170, 220, 0.2);
+}
+
+.solar-graph-segmented button {
+	all: unset;
+	padding: 4px 10px;
+	font-size: 12px;
+	color: #b9c4de;
+	cursor: pointer;
+	background: transparent;
+}
+
+.solar-graph-segmented button:hover {
+	background: rgba(150, 170, 220, 0.12);
+}
+
+.solar-graph-segmented button.is-active {
+	background: rgba(120, 160, 255, 0.28);
+	color: #ffffff;
+}
+
+.solar-graph-icon-button {
+	all: unset;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 6px;
+	color: #b9c4de;
+	cursor: pointer;
+}
+
+.solar-graph-icon-button:hover {
+	background: rgba(150, 170, 220, 0.14);
+	color: #ffffff;
+}
+
+.solar-graph-icon-button .svg-icon {
+	width: 15px;
+	height: 15px;
+}
+
+.solar-graph-speed {
+	width: 76px;
+	accent-color: #7ba7ff;
+}
+
+/* --- tooltip ----------------------------------------------------------- */
+
+.solar-graph-tooltip {
+	position: absolute;
+	top: 0;
+	left: 0;
+	max-width: 260px;
+	padding: 6px 9px;
+	border-radius: 7px;
+	background: rgba(12, 15, 28, 0.92);
+	border: 1px solid rgba(150, 170, 220, 0.22);
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 90ms ease-out;
+	z-index: 3;
+}
+
+.solar-graph-tooltip.is-visible {
+	opacity: 1;
+}
+
+.solar-graph-tooltip-title {
+	font-size: 12px;
+	font-weight: 600;
+	color: #ffffff;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.solar-graph-tooltip-meta {
+	font-size: 11px;
+	color: #9fabc6;
+	margin-top: 1px;
+}
+
+.solar-graph-tooltip-meta:empty {
+	display: none;
+}
+
+/* --- status ------------------------------------------------------------ */
+
+.solar-graph-status {
+	position: absolute;
+	bottom: 8px;
+	left: 10px;
+	font-size: 11px;
+	color: #7f8ba6;
+	pointer-events: none;
+	z-index: 2;
+}
+
+.solar-graph-warning {
+	color: #e0b062;
+}

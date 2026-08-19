@@ -1,0 +1,13 @@
+node_modules/
+test/build/
+main.js
+build.log
+
+# Full-size generated texture plates (~22 MB). Only needed to re-run
+# textures/process.py; the shipped maps next to them are what the plugin loads.
+textures/raw/
+
+# Built by textures/process.py from textures/raw. Committed on purpose: the
+# plugin imports these, so a clean checkout has to be able to build without
+# regenerating any images.
+!textures/dist/
