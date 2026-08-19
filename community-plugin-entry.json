@@ -1,7 +1,0 @@
-{
-  "id": "solar-graph",
-  "name": "Solar Graph",
-  "author": "Diego Cardozo",
-  "description": "A 3D graph view built like a solar system: notes orbit the notes they belong to, with real lighting, shadows and eclipses.",
-  "repo": "cardozodiegob/obsidian-solar-graph"
-}
