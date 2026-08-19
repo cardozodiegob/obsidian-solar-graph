@@ -355,6 +355,21 @@ The shipped plugin is `main.js`, `manifest.json`, `styles.css` and `textures/`;
 | `src/settings.ts` | Settings model, defaults and the settings tab |
 | `textures/` | Surface maps, plus the scripts that generate and process them |
 
+### Releasing
+
+`.github/workflows/release.yml` does the work. Bump the version in
+`manifest.json`, `package.json` and add an entry to `versions.json`, then push a
+tag matching that version:
+
+```bash
+git tag 1.0.1 && git push origin 1.0.1
+```
+
+The workflow checks the tag against `manifest.json`, runs the tests, builds, and
+attaches `main.js`, `manifest.json` and `styles.css` to a new release as three
+separate files. Obsidian downloads them by name, so they must not be zipped, and
+the tag must not have a leading `v`.
+
 ### Working on it against a real vault
 
 `npm run build` writes `main.js` next to the manifest. To try it in a vault,
