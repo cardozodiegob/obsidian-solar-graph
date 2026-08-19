@@ -1,22 +1,22 @@
 # Solar Graph
 
 Your vault as a solar system. Notes become worlds that orbit the notes they belong
-to — a star at the centre, planets around it, moons around those, as deep as your
+to: a star at the centre, planets around it, moons around those, as deep as your
 links go.
 
 ![Solar Graph showing a small vault](docs/overview.jpg)
 
 ## Install
 
-**From Obsidian** — Settings → Community plugins → Browse → search for
+**From Obsidian:** Settings → Community plugins → Browse → search for
 *Solar Graph* → Install → Enable.
 
-**Manually** — download `main.js`, `manifest.json` and `styles.css` from the
+**Manually:** download `main.js`, `manifest.json` and `styles.css` from the
 [latest release](../../releases/latest), drop them into
 `<your vault>/.obsidian/plugins/solar-graph/`, then enable the plugin in
 Settings → Community plugins.
 
-Desktop only — it needs a GPU.
+Desktop only, since it needs a GPU.
 
 ## Opening it
 
@@ -48,9 +48,9 @@ vault, so the system is a picture of how your notes actually hang together.
 | --- | --- | --- |
 | Carries 14+ notes beneath it | **A star** | Burning plasma. It lights everything orbiting it |
 | 8+ notes link off it | **Gas giant**, with rings | Jupiter's cloud bands |
-| 5–7 | **Ice giant**, with rings | Neptune's blue-green bands |
-| 3–4 | **A world** | Martian canyons, volcanic basalt, or desert dunes |
-| 1–2 | **Rocky world** | Grey and cratered |
+| 5-7 | **Ice giant**, with rings | Neptune's blue-green bands |
+| 3-4 | **A world** | Martian canyons, volcanic basalt, or desert dunes |
+| 1-2 | **Rocky world** | Grey and cratered |
 | Nothing links off it | **An ice moon** | Pale, cracked ice |
 | Nothing links to it *or* off it | **An asteroid** | A dark lump tumbling in the belt |
 | A `[[link]]` to a note you haven't written | **A ghost** | Dim and see-through |
@@ -69,15 +69,15 @@ two ice moons side by side don't look like copies.
 
 The toolbar switches what "belongs to" means:
 
-- **Links** — built from your `[[wikilinks]]`. Your most-linked note becomes the
+- **Links:** built from your `[[wikilinks]]`. Your most-linked note becomes the
   star and everything spreads out from there. Links that don't fit the orbits are
   drawn as faint chords.
-- **Folders** — built from your folder tree. Folders are worlds, the files inside
+- **Folders:** built from your folder tree. Folders are worlds, the files inside
   them orbit, and every link becomes a chord.
 
 ## Light and shadow
 
-Each star lights its own system, so worlds show real phases — a crescent when
+Each star lights its own system, so worlds show real phases: a crescent when
 you're looking at the night side, full when the star is behind you. Bodies cast
 shadows on each other, so a moon passing behind its planet is genuinely eclipsed,
 and a ringed planet punches a notch through its own rings.
@@ -94,25 +94,25 @@ drifts in front of them, through a faint interstellar haze.
 Everything is in Settings → Community plugins → Solar Graph. The ones worth
 knowing about:
 
-**Hierarchy** — links or folders, which note is the star, whether to show notes
+**Hierarchy.** Links or folders, which note is the star, and whether to show notes
 you haven't written yet.
 
-**Motion and scale** — orbital speed, spacing, body size, and how much the orbits
+**Motion and scale.** Orbital speed, spacing, body size, and how much the orbits
 tilt (set tilt to 0 for a flat, diagram-like system).
 
-**Stars** — how many notes a note needs beneath it before it ignites into a star
+**Stars.** How many notes a note needs beneath it before it ignites into a star
 of its own. Lower it for more suns, set it to 1 for exactly one.
 
-**Light and shadow** — star brightness and falloff, shadow quality, how dark
+**Light and shadow.** Star brightness and falloff, shadow quality, how dark
 shadows go, light shafts, haze and glow.
 
-**Appearance** — surface textures, planetary rings, particle effects, orbit rings,
-cross-links, labels.
+**Appearance.** Surface textures, planetary rings, particle effects, orbit rings,
+cross-links and labels.
 
 ### If something doesn't look right
 
 **Everything's too dark.** That's real night-side lighting. Turn **Shadow depth**
-down — it controls how much light reaches an unlit face. Turning it right down
+down. It controls how much light reaches an unlit face. Turning it right down
 gives you flat, evenly-lit bodies.
 
 **I don't see any rings, giants or an asteroid belt.** Then no note in your vault
@@ -121,9 +121,9 @@ in the table above; the **Stars** slider is the one to lower if you want more
 drama in a small vault.
 
 **It's slow.** Turn off **Light shafts** first, then **Particle effects**, then set
-**Shadows** to off. **Surface textures** off is the last resort — it drops to plain
-coloured spheres. On very large vaults shadows switch themselves off automatically,
-and **Maximum bodies** caps how much is drawn at all.
+**Shadows** to off. **Surface textures** off is the last resort, because it drops
+to plain coloured spheres. On very large vaults shadows switch themselves off
+automatically, and **Maximum bodies** caps how much is drawn at all.
 
 **My vault is huge.** Raise **Maximum bodies** if you want more than 3,000 notes on
 screen, but expect it to cost you.
@@ -154,7 +154,7 @@ To try a build in a real vault, copy the three runtime files across:
 cp main.js manifest.json styles.css "<vault>/.obsidian/plugins/solar-graph/"
 ```
 
-**Releasing** — bump `manifest.json`, `package.json` and `versions.json`, then push
+**Releasing.** Bump `manifest.json`, `package.json` and `versions.json`, then push
 a matching tag (`git tag 1.0.1 && git push origin 1.0.1`). The workflow tests,
 builds, and attaches `main.js`, `manifest.json` and `styles.css` to a release.
 
