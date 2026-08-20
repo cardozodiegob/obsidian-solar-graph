@@ -134,6 +134,7 @@ screen, but expect it to cost you.
 npm install
 npm run dev      # rebuild on save, then Ctrl+P → "Reload app without saving"
 npm run build    # typecheck and build
+npm run lint     # the same checks the plugin directory runs on submission
 npm test         # headless checks for the tree building and the orbital layout
 ```
 

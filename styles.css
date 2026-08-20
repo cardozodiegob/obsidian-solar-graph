@@ -93,12 +93,20 @@
 }
 
 .solar-graph-segmented button {
-	all: unset;
+	/* Reset only what a button brings with it. A blanket reset would also discard
+	   inherited values and fight the user's theme. */
+	appearance: none;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	margin: 0;
+	background: transparent;
 	padding: 4px 10px;
+	font: inherit;
 	font-size: 12px;
+	line-height: 1.2;
 	color: #b9c4de;
 	cursor: pointer;
-	background: transparent;
 }
 
 .solar-graph-segmented button:hover {
@@ -111,7 +119,13 @@
 }
 
 .solar-graph-icon-button {
-	all: unset;
+	appearance: none;
+	border: none;
+	box-shadow: none;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	font: inherit;
 	display: flex;
 	align-items: center;
 	justify-content: center;

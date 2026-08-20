@@ -1,6 +1,6 @@
 {
   "name": "obsidian-solar-graph",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "A 3D solar-system graph view for Obsidian: notes orbit their parents like planets around a star.",
   "main": "main.js",
@@ -9,7 +9,8 @@
     "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "textures": "python textures/process.py",
-    "test": "esbuild test/smoke.ts --bundle --platform=node --format=cjs --outfile=test/build/smoke.cjs --alias:obsidian=./test/obsidian-stub.ts --log-level=warning && node test/build/smoke.cjs"
+    "test": "esbuild test/smoke.ts --bundle --platform=node --format=cjs --outfile=test/build/smoke.cjs --alias:obsidian=./test/obsidian-stub.ts --log-level=warning && node test/build/smoke.cjs",
+    "lint": "eslint ."
   },
   "keywords": [],
   "license": "MIT",
@@ -17,12 +18,15 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@types/node": "^22.10.0",
     "@types/three": "^0.185.0",
-    "builtin-modules": "^4.0.0",
     "esbuild": "^0.25.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-obsidianmd": "^0.4.1",
     "obsidian": "^1.7.2",
     "tslib": "^2.8.1",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.67.0"
   }
 }

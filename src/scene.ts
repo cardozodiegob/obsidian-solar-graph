@@ -5,7 +5,6 @@ import {
 	BufferAttribute,
 	BufferGeometry,
 	CanvasTexture,
-	ClampToEdgeWrapping,
 	Color,
 	DoubleSide,
 	Float32BufferAttribute,
@@ -25,7 +24,6 @@ import {
 	Points,
 	PointsMaterial,
 	Raycaster,
-	RepeatWrapping,
 	Scene,
 	ShaderMaterial,
 	SphereGeometry,
@@ -58,10 +56,10 @@ import { SHADOW_PRESETS, type SolarGraphSettings } from "./settings";
 export type TextureSet = Partial<Record<string, Texture[]>>;
 
 /**
- * Render layers. Everything visible is on 0; the extra two exist so the light
- * shaft pass can draw the light sources and the things blocking them separately.
+ * Render layers. Everything visible is on layer 0; these two extra ones exist so
+ * the light shaft pass can draw the light sources and the things blocking them
+ * separately.
  */
-const LAYER_DEFAULT = 0;
 const LAYER_LIGHT = 1;
 const LAYER_OCCLUDE = 2;
 
@@ -89,12 +87,6 @@ const MAX_CORONAS = 4;
  * bodies they're switched off rather than letting the view crawl.
  */
 const SHADOW_BODY_LIMIT = 900;
-/**
- * Falloff exponent for star light. Inverse-square (2) is physically right but
- * leaves outer worlds black; this keeps the range legible while still lighting
- * each system from its own star, which is what makes an eclipse read.
- */
-const LIGHT_DECAY = 0.6;
 /** A star's light reaches this many times its own system's radius, then stops. */
 const LIGHT_RANGE = 2.8;
 /** What a star that isn't the nearest one is dimmed to, when that's switched on. */
@@ -342,14 +334,15 @@ export class SolarScene {
 		if (this.animationHandle) return;
 		this.lastTick = performance.now();
 		const loop = () => {
-			this.animationHandle = requestAnimationFrame(loop);
+			// window-qualified so the loop keeps running in a popped-out window.
+			this.animationHandle = window.requestAnimationFrame(loop);
 			this.tick();
 		};
-		this.animationHandle = requestAnimationFrame(loop);
+		this.animationHandle = window.requestAnimationFrame(loop);
 	}
 
 	stop() {
-		if (this.animationHandle) cancelAnimationFrame(this.animationHandle);
+		if (this.animationHandle) window.cancelAnimationFrame(this.animationHandle);
 		this.animationHandle = 0;
 	}
 
@@ -1499,6 +1492,27 @@ class LightShaftPass extends Pass {
 
 	private occlusion: WebGLRenderTarget;
 	private shafts: WebGLRenderTarget;
+	/**
+	 * Uniforms are held as typed objects rather than reached for through
+	 * `material.uniforms`, which three types as `any`.
+	 */
+	private readonly blurUniforms = {
+		tDiffuse: { value: null as Texture | null },
+		lightPos: { value: new Vector2(0.5, 0.5) },
+		// How far along the ray to the light each pixel gathers from. Push this up
+		// and the rays reach across the whole frame as a flat wash.
+		density: { value: 0.55 },
+		decay: { value: 0.94 },
+		// Unity gain: sum(weight · decay^i) over the samples is about 1, so the pass
+		// adds light of roughly the source's own brightness rather than forty times
+		// it. `strength` is the user-facing dial on top.
+		weight: { value: 0.055 },
+	};
+	private readonly combineUniforms = {
+		tDiffuse: { value: null as Texture | null },
+		tShafts: { value: null as Texture | null },
+		strength: { value: 0.55 },
+	};
 	private blurMaterial: ShaderMaterial;
 	private combineMaterial: ShaderMaterial;
 	private quad: FullScreenQuad;
@@ -1516,18 +1530,7 @@ class LightShaftPass extends Pass {
 		this.shafts = new WebGLRenderTarget(Math.max(1, width >> 1), Math.max(1, height >> 1));
 
 		this.blurMaterial = new ShaderMaterial({
-			uniforms: {
-				tDiffuse: { value: null },
-				lightPos: { value: new Vector2(0.5, 0.5) },
-				// How far along the ray to the light each pixel gathers from. Push
-				// this up and the rays reach across the whole frame as a flat wash.
-				density: { value: 0.55 },
-				decay: { value: 0.94 },
-				// Unity gain: sum(weight · decay^i) over the samples ≈ 1, so the pass
-				// adds light of roughly the source's own brightness rather than
-				// forty times it. `strength` is the user-facing dial on top.
-				weight: { value: 0.055 },
-			},
+			uniforms: this.blurUniforms,
 			vertexShader: FULLSCREEN_VERTEX,
 			fragmentShader: /* glsl */ `
 				uniform sampler2D tDiffuse;
@@ -1566,11 +1569,7 @@ class LightShaftPass extends Pass {
 		});
 
 		this.combineMaterial = new ShaderMaterial({
-			uniforms: {
-				tDiffuse: { value: null },
-				tShafts: { value: null },
-				strength: { value: 0.55 },
-			},
+			uniforms: this.combineUniforms,
 			vertexShader: FULLSCREEN_VERTEX,
 			fragmentShader: /* glsl */ `
 				uniform sampler2D tDiffuse;
@@ -1612,9 +1611,9 @@ class LightShaftPass extends Pass {
 		if (silent) {
 			// On screen and nothing to add: copy the frame through at zero strength.
 			// The stale shaft buffer is harmless because it's multiplied away.
-			this.combineMaterial.uniforms.tDiffuse.value = readBuffer.texture;
-			this.combineMaterial.uniforms.tShafts.value = this.shafts.texture;
-			this.combineMaterial.uniforms.strength.value = 0;
+			this.combineUniforms.tDiffuse.value = readBuffer.texture;
+			this.combineUniforms.tShafts.value = this.shafts.texture;
+			this.combineUniforms.strength.value = 0;
 			this.quad.material = this.combineMaterial;
 			renderer.setRenderTarget(null);
 			this.quad.render(renderer);
@@ -1648,17 +1647,17 @@ class LightShaftPass extends Pass {
 		renderer.autoClear = previousAutoClear;
 
 		// Smear it away from the light.
-		this.blurMaterial.uniforms.tDiffuse.value = this.occlusion.texture;
-		this.blurMaterial.uniforms.lightPos.value.copy(this.light);
+		this.blurUniforms.tDiffuse.value = this.occlusion.texture;
+		this.blurUniforms.lightPos.value.copy(this.light);
 		this.quad.material = this.blurMaterial;
 		renderer.setRenderTarget(this.shafts);
 		renderer.clear();
 		this.quad.render(renderer);
 
 		// Add it to the frame.
-		this.combineMaterial.uniforms.tDiffuse.value = readBuffer.texture;
-		this.combineMaterial.uniforms.tShafts.value = this.shafts.texture;
-		this.combineMaterial.uniforms.strength.value = this.strength * this.fade;
+		this.combineUniforms.tDiffuse.value = readBuffer.texture;
+		this.combineUniforms.tShafts.value = this.shafts.texture;
+		this.combineUniforms.strength.value = this.strength * this.fade;
 		this.quad.material = this.combineMaterial;
 		renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
 		if (this.clear) renderer.clear();
@@ -1758,7 +1757,7 @@ function makeRingPlaneGeometry(
 /** Soft round mote, shared by every particle cloud. */
 function makeDustTexture(): CanvasTexture {
 	const size = 32;
-	const canvas = document.createElement("canvas");
+	const canvas = createEl("canvas");
 	canvas.width = size;
 	canvas.height = size;
 	const ctx = canvas.getContext("2d")!;
@@ -1798,7 +1797,7 @@ function makeCircleGeometry(segments: number): BufferGeometry {
  */
 function makeHaloTexture(bodyFraction: number): CanvasTexture {
 	const size = 256;
-	const canvas = document.createElement("canvas");
+	const canvas = createEl("canvas");
 	canvas.width = size;
 	canvas.height = size;
 	const ctx = canvas.getContext("2d")!;

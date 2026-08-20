@@ -175,7 +175,7 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("What orbits what")
 			.setDesc(
-				"Links builds a spanning tree from your wikilinks — the most connected note becomes the star. Folders uses the vault's folder tree."
+				"Links builds a spanning tree from your wikilinks, and your most connected note becomes the star. Folders uses the vault's folder tree instead."
 			)
 			.addDropdown((d) =>
 				d
@@ -230,7 +230,7 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Include attachments")
-			.setDesc("Folder mode only. Adds images, PDFs and other non-note files.")
+			.setDesc("Folder mode only. Also shows images, documents and other attachments.")
 			.addToggle((t) =>
 				t.setValue(s.includeAttachments).onChange(async (v) => {
 					s.includeAttachments = v;
@@ -242,12 +242,11 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Orbital speed")
-			.setDesc("Inner orbits always run faster than outer ones (Kepler's third law).")
+			.setDesc("Inner orbits always run faster than outer ones, the way a real system does.")
 			.addSlider((sl) =>
 				sl
 					.setLimits(0, 4, 0.1)
 					.setValue(s.speed)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.speed = v;
 						await commit("speed");
@@ -261,7 +260,6 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 				sl
 					.setLimits(1, 16, 0.5)
 					.setValue(s.orbitSpacing)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.orbitSpacing = v;
 						await commit("orbitSpacing");
@@ -274,7 +272,6 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 				sl
 					.setLimits(0.3, 3, 0.1)
 					.setValue(s.bodyScale)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.bodyScale = v;
 						await commit("bodyScale");
@@ -288,7 +285,6 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 				sl
 					.setLimits(0, 60, 1)
 					.setValue(s.inclinationSpread)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.inclinationSpread = v;
 						await commit("inclinationSpread");
@@ -298,13 +294,12 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Stars")
 			.setDesc(
-				"A note carrying at least this many notes beneath it — children, grandchildren and so on — becomes a star of its own, lighting everything that orbits it. 1 leaves only the root of each system as a star."
+				"A note carrying at least this many notes beneath it, counting children and grandchildren and so on, becomes a star of its own and lights everything that orbits it. Set it to 1 to leave only the root of each system as a star."
 			)
 			.addSlider((sl) =>
 				sl
 					.setLimits(1, 60, 1)
 					.setValue(s.starSubtreeSize)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.starSubtreeSize = v;
 						await commit("starSubtreeSize");
@@ -320,7 +315,6 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 				sl
 					.setLimits(0.2, 3, 0.1)
 					.setValue(s.starBrightness)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.starBrightness = v;
 						await commit("starBrightness");
@@ -330,13 +324,12 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Light falloff")
 			.setDesc(
-				"How fast light dims with distance: 0 spreads it evenly, 1 is linear, 2 is physically correct inverse-square. Raise it if a body lit by two stars shows two bright patches with a hard seam — the nearer star then wins clearly."
+				"How fast light dims with distance: 0 spreads it evenly, 1 is linear, 2 is physically correct inverse-square. Raise it if a body lit by two stars shows two bright patches with a hard seam, so the nearer star wins clearly."
 			)
 			.addSlider((sl) =>
 				sl
 					.setLimits(0, 2, 0.1)
 					.setValue(s.lightFalloff)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.lightFalloff = v;
 						await commit("lightFalloff");
@@ -346,7 +339,7 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Nearest star dominates")
 			.setDesc(
-				"Fades down every star but the closest one, so a body is lit from a single direction. Turn it off for true multi-star lighting — but a body sitting between two stars is then lit from both sides, with a dark seam where the two pools of light meet."
+				"Fades down every star but the closest one, so a body is lit from a single direction. Turn it off for true multi-star lighting, though a body sitting between two stars is then lit from both sides, with a dark seam where the two pools of light meet."
 			)
 			.addToggle((tg) =>
 				tg.setValue(s.dominantLighting).onChange(async (v) => {
@@ -364,7 +357,6 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 				sl
 					.setLimits(0, 2.5, 0.1)
 					.setValue(s.starGlow)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.starGlow = v;
 						await commit("starGlow");
@@ -378,7 +370,6 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 				sl
 					.setLimits(0, 2.5, 0.1)
 					.setValue(s.coronaStrength)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.coronaStrength = v;
 						await commit("coronaStrength");
@@ -388,14 +379,14 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Shadows")
 			.setDesc(
-				"Bodies cast real shadows, so a moon passing behind its planet is genuinely eclipsed. Higher settings are sharper and cost more — each step also lets another star cast."
+				"Bodies cast real shadows, so a moon passing behind its planet is genuinely eclipsed. Higher settings are sharper and cost more, and each step lets another star cast."
 			)
 			.addDropdown((d) =>
 				d
 					.addOption("off", "Off")
-					.addOption("low", "Low — 512px, 1 star")
-					.addOption("medium", "Medium — 1024px, 2 stars")
-					.addOption("high", "High — 2048px, 3 stars")
+					.addOption("low", "Low: 512px, 1 star")
+					.addOption("medium", "Medium: 1024px, 2 stars")
+					.addOption("high", "High: 2048px, 3 stars")
 					.setValue(s.shadowQuality)
 					.onChange(async (v) => {
 						s.shadowQuality = v as ShadowQuality;
@@ -406,13 +397,12 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Shadow depth")
 			.setDesc(
-				"How dark an eclipsed or unlit surface goes — this is the ambient fill, the only light reaching a shadowed face. Higher is more dramatic and makes eclipses obvious; lower keeps night sides readable."
+				"How dark an eclipsed or unlit surface goes. This is the ambient fill, the only light reaching a shadowed face. Higher is more dramatic and makes eclipses obvious, lower keeps night sides readable."
 			)
 			.addSlider((sl) =>
 				sl
 					.setLimits(0, 1, 0.05)
 					.setValue(s.shadowDepth)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.shadowDepth = v;
 						await commit("shadowDepth");
@@ -422,7 +412,7 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Light shafts")
 			.setDesc(
-				"Volumetric rays streaming out from the stars, broken by whatever passes in front of them. The most expensive effect here — turn it off first if the frame rate drops."
+				"Volumetric rays streaming out from the stars, broken by whatever passes in front of them. This is the most expensive effect here, so turn it off first if the frame rate drops."
 			)
 			.addToggle((t) =>
 				t.setValue(s.lightShafts).onChange(async (v) => {
@@ -437,7 +427,6 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 				sl
 					.setLimits(0, 1.5, 0.05)
 					.setValue(s.lightShaftStrength)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.lightShaftStrength = v;
 						await commit("lightShaftStrength");
@@ -447,13 +436,12 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Interstellar haze")
 			.setDesc(
-				"Fog through the system. Adds depth and gives the light shafts something to travel through. 0 is clear vacuum."
+				"Fog through the system. Adds depth and gives the light shafts something to travel through. Zero is clear vacuum."
 			)
 			.addSlider((sl) =>
 				sl
 					.setLimits(0, 1.5, 0.05)
 					.setValue(s.fogDensity)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.fogDensity = v;
 						await commit("fogDensity");
@@ -462,12 +450,11 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Glow")
-			.setDesc("Bloom around stars, rings and bright surfaces. 0 turns the pass off entirely.")
+			.setDesc("Bloom around stars, rings and bright surfaces. Zero turns the effect off entirely.")
 			.addSlider((sl) =>
 				sl
 					.setLimits(0, 1.5, 0.05)
 					.setValue(s.glowStrength)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.glowStrength = v;
 						await commit("glowStrength");
@@ -520,7 +507,7 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Show cross-links")
 			.setDesc(
-				"Faint chords for the links the orbits can't express — in link mode that's every link outside the spanning tree."
+				"Faint chords for the links the orbits can't express. In link mode that means every link outside the spanning tree."
 			)
 			.addToggle((t) =>
 				t.setValue(s.showCrossLinks).onChange(async (v) => {
@@ -550,7 +537,6 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 				sl
 					.setLimits(10, 300, 10)
 					.setValue(s.labelBudget)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.labelBudget = v;
 						await commit("labelBudget");
@@ -561,7 +547,9 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Open note on click")
-			.setDesc("Ctrl/Cmd-click opens in a new tab. Alt-click re-roots the system.")
+			.setDesc(
+				"Ctrl-click opens the note in a new tab. Alt-click rebuilds the system around it."
+			)
 			.addToggle((t) =>
 				t.setValue(s.openOnClick).onChange(async (v) => {
 					s.openOnClick = v;
@@ -588,7 +576,6 @@ export class SolarGraphSettingTab extends PluginSettingTab {
 				sl
 					.setLimits(200, 8000, 100)
 					.setValue(s.maxNodes)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.maxNodes = v;
 						await commit("maxNodes");

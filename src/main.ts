@@ -58,16 +58,21 @@ export default class SolarGraphPlugin extends Plugin {
 	async activateView() {
 		const existing = this.app.workspace.getLeavesOfType(SOLAR_GRAPH_VIEW);
 		if (existing.length > 0) {
-			await this.app.workspace.revealLeaf(existing[0]);
+			// Not awaited: revealLeaf only became awaitable after the minimum app
+			// version this plugin supports, and the reveal happens either way.
+			void this.app.workspace.revealLeaf(existing[0]);
 			return;
 		}
 		const leaf = this.app.workspace.getLeaf("tab");
 		await leaf.setViewState({ type: SOLAR_GRAPH_VIEW, active: true });
-		await this.app.workspace.revealLeaf(leaf);
+		void this.app.workspace.revealLeaf(leaf);
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		// loadData() is typed as any; narrowing it here keeps the spread type-safe and
+		// tolerates settings files written by older versions of the plugin.
+		const saved = (await this.loadData()) as Partial<SolarGraphSettings> | null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved ?? {});
 	}
 
 	/**

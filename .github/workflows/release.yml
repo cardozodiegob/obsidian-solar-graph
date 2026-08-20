@@ -10,6 +10,10 @@ on:
 
 permissions:
   contents: write
+  # Both are needed to sign build provenance for the release assets, so users can
+  # verify the files came from this repository and this workflow.
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -36,8 +40,18 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            styles.css
 
       - name: Create the release
         env:
