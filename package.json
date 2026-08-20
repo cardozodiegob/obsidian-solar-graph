@@ -1,6 +1,6 @@
 {
   "name": "obsidian-solar-graph",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "A 3D solar-system graph view for Obsidian: notes orbit their parents like planets around a star.",
   "main": "main.js",

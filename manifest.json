@@ -1,7 +1,7 @@
 {
   "id": "solar-graph",
   "name": "Solar Graph",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "minAppVersion": "1.7.2",
   "description": "A 3D graph view built like a solar system: notes orbit the notes they belong to, with real lighting, shadows and eclipses.",
   "author": "Diego Cardozo",

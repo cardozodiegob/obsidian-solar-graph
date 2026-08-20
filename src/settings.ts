@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting, type SettingDefinitionItem } from "obsidian";
 import { DEFAULT_STAR_SUBTREE, ICE_GIANT_CHILDREN } from "./classify";
 import type SolarGraphPlugin from "./main";
 
@@ -155,431 +155,358 @@ const REBUILD_KEYS: Array<keyof SolarGraphSettings> = [
 export function needsRebuild(changed: keyof SolarGraphSettings): boolean {
 	return REBUILD_KEYS.includes(changed);
 }
+/** One control in the settings UI, and which setting it reads and writes. */
+type ControlSpec =
+	| { type: "toggle" }
+	| { type: "dropdown"; options: Record<string, string> }
+	| { type: "slider"; min: number; max: number; step: number };
+
+interface SettingSpec {
+	key: keyof SolarGraphSettings;
+	name: string;
+	desc?: string;
+	control: ControlSpec;
+}
+
+interface SettingGroupSpec {
+	heading: string;
+	items: SettingSpec[];
+}
+
+/**
+ * Every setting, described once.
+ *
+ * Obsidian 1.13 and later render settings from getSettingDefinitions() and never
+ * call display(); older versions know only display(). Both read this table, so the
+ * two paths cannot drift apart.
+ */
+const SETTING_GROUPS: SettingGroupSpec[] = [
+	{
+		heading: "Hierarchy",
+		items: [
+			{
+				key: "hierarchy",
+				name: "What orbits what",
+				desc:
+					"Links builds a spanning tree from your wikilinks, and your most connected note becomes the star. Folders uses the vault's folder tree instead.",
+				control: { type: "dropdown", options: { "links": "Links", "folders": "Folders" } },
+			},
+			{
+				key: "rootMode",
+				name: "Star of the primary system",
+				desc:
+					"Link mode only. Alt-click any body in the view to re-root on it.",
+				control: { type: "dropdown", options: { "hub": "Most connected note", "active": "Currently open note" } },
+			},
+			{
+				key: "linkDirection",
+				name: "Link direction",
+				desc:
+					"Both treats links as two-way, so nothing is stranded. Outgoing only follows links away from a note, which keeps the tree closer to how you wrote it.",
+				control: { type: "dropdown", options: { "both": "Both directions", "outgoing": "Outgoing only" } },
+			},
+			{
+				key: "includeUnresolved",
+				name: "Show unresolved links",
+				desc:
+					"Links to notes that don't exist yet appear as dim, unlit bodies.",
+				control: { type: "toggle" },
+			},
+			{
+				key: "includeAttachments",
+				name: "Include attachments",
+				desc:
+					"Folder mode only. Also shows images, documents and other attachments.",
+				control: { type: "toggle" },
+			},
+		],
+	},
+	{
+		heading: "Motion and scale",
+		items: [
+			{
+				key: "speed",
+				name: "Orbital speed",
+				desc:
+					"Inner orbits always run faster than outer ones, the way a real system does.",
+				control: { type: "slider", min: 0, max: 4, step: 0.1 },
+			},
+			{
+				key: "orbitSpacing",
+				name: "Orbit spacing",
+				desc:
+					"Distance between neighbouring orbits.",
+				control: { type: "slider", min: 1, max: 16, step: 0.5 },
+			},
+			{
+				key: "bodyScale",
+				name: "Body size",
+				control: { type: "slider", min: 0.3, max: 3, step: 0.1 },
+			},
+			{
+				key: "inclinationSpread",
+				name: "Orbit tilt",
+				desc:
+					"Maximum tilt of an orbit plane, in degrees. Zero makes every system flat.",
+				control: { type: "slider", min: 0, max: 60, step: 1 },
+			},
+			{
+				key: "starSubtreeSize",
+				name: "Stars",
+				desc:
+					"A note carrying at least this many notes beneath it, counting children and grandchildren and so on, becomes a star of its own and lights everything that orbits it. Set it to 1 to leave only the root of each system as a star.",
+				control: { type: "slider", min: 1, max: 60, step: 1 },
+			},
+		],
+	},
+	{
+		heading: "Light and shadow",
+		items: [
+			{
+				key: "starBrightness",
+				name: "Star brightness",
+				desc:
+					"How hard the stars shine on everything orbiting them.",
+				control: { type: "slider", min: 0.2, max: 3, step: 0.1 },
+			},
+			{
+				key: "lightFalloff",
+				name: "Light falloff",
+				desc:
+					"How fast light dims with distance: 0 spreads it evenly, 1 is linear, 2 is physically correct inverse-square. Raise it if a body lit by two stars shows two bright patches with a hard seam, so the nearer star wins clearly.",
+				control: { type: "slider", min: 0, max: 2, step: 0.1 },
+			},
+			{
+				key: "dominantLighting",
+				name: "Nearest star dominates",
+				desc:
+					"Fades down every star but the closest one, so a body is lit from a single direction. Turn it off for true multi-star lighting, though a body sitting between two stars is then lit from both sides, with a dark seam where the two pools of light meet.",
+				control: { type: "toggle" },
+			},
+			{
+				key: "starGlow",
+				name: "Star halo",
+				desc:
+					"Size of the glow around a star. The halo is cut out around the body itself, so it never lies on top of the surface.",
+				control: { type: "slider", min: 0, max: 2.5, step: 0.1 },
+			},
+			{
+				key: "coronaStrength",
+				name: "Corona",
+				desc:
+					"Density of the plasma motes boiling off a star's surface.",
+				control: { type: "slider", min: 0, max: 2.5, step: 0.1 },
+			},
+			{
+				key: "shadowQuality",
+				name: "Shadows",
+				desc:
+					"Bodies cast real shadows, so a moon passing behind its planet is genuinely eclipsed. Higher settings are sharper and cost more, and each step lets another star cast.",
+				control: { type: "dropdown", options: { "off": "Off", "low": "Low: 512px, 1 star", "medium": "Medium: 1024px, 2 stars", "high": "High: 2048px, 3 stars" } },
+			},
+			{
+				key: "shadowDepth",
+				name: "Shadow depth",
+				desc:
+					"How dark an eclipsed or unlit surface goes. This is the ambient fill, the only light reaching a shadowed face. Higher is more dramatic and makes eclipses obvious, lower keeps night sides readable.",
+				control: { type: "slider", min: 0, max: 1, step: 0.05 },
+			},
+			{
+				key: "lightShafts",
+				name: "Light shafts",
+				desc:
+					"Volumetric rays streaming out from the stars, broken by whatever passes in front of them. This is the most expensive effect here, so turn it off first if the frame rate drops.",
+				control: { type: "toggle" },
+			},
+			{
+				key: "lightShaftStrength",
+				name: "Light shaft strength",
+				control: { type: "slider", min: 0, max: 1.5, step: 0.05 },
+			},
+			{
+				key: "fogDensity",
+				name: "Interstellar haze",
+				desc:
+					"Fog through the system. Adds depth and gives the light shafts something to travel through. Zero is clear vacuum.",
+				control: { type: "slider", min: 0, max: 1.5, step: 0.05 },
+			},
+			{
+				key: "glowStrength",
+				name: "Glow",
+				desc:
+					"Bloom around stars, rings and bright surfaces. Zero turns the effect off entirely.",
+				control: { type: "slider", min: 0, max: 1.5, step: 0.05 },
+			},
+		],
+	},
+	{
+		heading: "Appearance",
+		items: [
+			{
+				key: "useTextures",
+				name: "Surface textures",
+				desc:
+					"Photographic surfaces: cloud bands on giants, craters on rocky notes, ice on leaves. Off gives flat coloured spheres, which is faster on weak hardware.",
+				control: { type: "toggle" },
+			},
+			{
+				key: "showRings",
+				name: "Planetary rings",
+				desc: `Saturn-style rings on notes with ${ICE_GIANT_CHILDREN} or more children.`,
+				control: { type: "toggle" },
+			},
+			{
+				key: "showParticles",
+				name: "Particle effects",
+				desc:
+					"Star coronas, dust along the asteroid belt, and haze across the system.",
+				control: { type: "toggle" },
+			},
+			{
+				key: "showOrbits",
+				name: "Show orbit rings",
+				control: { type: "toggle" },
+			},
+			{
+				key: "showCrossLinks",
+				name: "Show cross-links",
+				desc:
+					"Faint chords for the links the orbits can't express. In link mode that means every link outside the spanning tree.",
+				control: { type: "toggle" },
+			},
+			{
+				key: "labelMode",
+				name: "Labels",
+				control: { type: "dropdown", options: { "near": "Nearest bodies", "roots": "Stars and their planets", "none": "Hover only" } },
+			},
+			{
+				key: "labelBudget",
+				name: "Label budget",
+				desc:
+					"How many labels may be on screen at once.",
+				control: { type: "slider", min: 10, max: 300, step: 10 },
+			},
+		],
+	},
+	{
+		heading: "Interaction",
+		items: [
+			{
+				key: "openOnClick",
+				name: "Open note on click",
+				desc:
+					"Ctrl-click opens the note in a new tab. Alt-click rebuilds the system around it.",
+				control: { type: "toggle" },
+			},
+			{
+				key: "followSelection",
+				name: "Follow selection",
+				desc:
+					"Keep the camera locked on the selected body while it orbits.",
+				control: { type: "toggle" },
+			},
+		],
+	},
+	{
+		heading: "Performance",
+		items: [
+			{
+				key: "maxNodes",
+				name: "Maximum bodies",
+				desc:
+					"Vaults larger than this are truncated; the view says so when it happens.",
+				control: { type: "slider", min: 200, max: 8000, step: 100 },
+			},
+		],
+	},
+];
 
 export class SolarGraphSettingTab extends PluginSettingTab {
 	constructor(app: App, private plugin: SolarGraphPlugin) {
 		super(app, plugin);
 	}
 
+	/**
+	 * The declarative settings, used by Obsidian 1.13 and later. Returning a
+	 * non-empty array here is what makes Obsidian skip display(), and it is also
+	 * what puts these settings in the settings search index.
+	 */
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return SETTING_GROUPS.map((group) => ({
+			type: "group",
+			heading: group.heading,
+			items: group.items.map((item) => ({
+				name: item.name,
+				desc: item.desc,
+				control: { key: item.key, ...item.control },
+			})),
+		}));
+	}
+
+	/**
+	 * Obsidian's default writes the value and persists it, which isn't enough here:
+	 * an open view has to hear about the change, and how much work it implies varies
+	 * from a repaint to re-reading the whole vault.
+	 */
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		await this.commit(key as keyof SolarGraphSettings, value);
+	}
+
+	/**
+	 * The imperative fallback for Obsidian before 1.13, which has no declarative
+	 * settings API. Built from the same table, in the same order.
+	 */
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		const s = this.plugin.settings;
+		for (const group of SETTING_GROUPS) {
+			new Setting(containerEl).setName(group.heading).setHeading();
+			for (const spec of group.items) this.renderSetting(containerEl, spec);
+		}
+	}
 
-		const commit = async (key: keyof SolarGraphSettings) => {
-			await this.plugin.saveSettings(key);
-		};
+	private renderSetting(containerEl: HTMLElement, spec: SettingSpec): void {
+		const setting = new Setting(containerEl).setName(spec.name);
+		if (spec.desc) setting.setDesc(spec.desc);
+		const control = spec.control;
 
-		new Setting(containerEl).setName("Hierarchy").setHeading();
-
-		new Setting(containerEl)
-			.setName("What orbits what")
-			.setDesc(
-				"Links builds a spanning tree from your wikilinks, and your most connected note becomes the star. Folders uses the vault's folder tree instead."
-			)
-			.addDropdown((d) =>
-				d
-					.addOption("links", "Links")
-					.addOption("folders", "Folders")
-					.setValue(s.hierarchy)
-					.onChange(async (v) => {
-						s.hierarchy = v as Hierarchy;
-						await commit("hierarchy");
-					})
+		if (control.type === "toggle") {
+			setting.addToggle((toggle) =>
+				toggle
+					.setValue(this.read<boolean>(spec.key))
+					.onChange((value) => void this.commit(spec.key, value))
 			);
-
-		new Setting(containerEl)
-			.setName("Star of the primary system")
-			.setDesc("Link mode only. Alt-click any body in the view to re-root on it.")
-			.addDropdown((d) =>
-				d
-					.addOption("hub", "Most connected note")
-					.addOption("active", "Currently open note")
-					.setValue(s.rootMode)
-					.onChange(async (v) => {
-						s.rootMode = v as RootMode;
-						await commit("rootMode");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Link direction")
-			.setDesc(
-				"Both treats links as two-way, so nothing is stranded. Outgoing only follows links away from a note, which keeps the tree closer to how you wrote it."
-			)
-			.addDropdown((d) =>
-				d
-					.addOption("both", "Both directions")
-					.addOption("outgoing", "Outgoing only")
-					.setValue(s.linkDirection)
-					.onChange(async (v) => {
-						s.linkDirection = v as LinkDirection;
-						await commit("linkDirection");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Show unresolved links")
-			.setDesc("Links to notes that don't exist yet appear as dim, unlit bodies.")
-			.addToggle((t) =>
-				t.setValue(s.includeUnresolved).onChange(async (v) => {
-					s.includeUnresolved = v;
-					await commit("includeUnresolved");
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Include attachments")
-			.setDesc("Folder mode only. Also shows images, documents and other attachments.")
-			.addToggle((t) =>
-				t.setValue(s.includeAttachments).onChange(async (v) => {
-					s.includeAttachments = v;
-					await commit("includeAttachments");
-				})
-			);
-
-		new Setting(containerEl).setName("Motion and scale").setHeading();
-
-		new Setting(containerEl)
-			.setName("Orbital speed")
-			.setDesc("Inner orbits always run faster than outer ones, the way a real system does.")
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 4, 0.1)
-					.setValue(s.speed)
-					.onChange(async (v) => {
-						s.speed = v;
-						await commit("speed");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Orbit spacing")
-			.setDesc("Distance between neighbouring orbits.")
-			.addSlider((sl) =>
-				sl
-					.setLimits(1, 16, 0.5)
-					.setValue(s.orbitSpacing)
-					.onChange(async (v) => {
-						s.orbitSpacing = v;
-						await commit("orbitSpacing");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Body size")
-			.addSlider((sl) =>
-				sl
-					.setLimits(0.3, 3, 0.1)
-					.setValue(s.bodyScale)
-					.onChange(async (v) => {
-						s.bodyScale = v;
-						await commit("bodyScale");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Orbit tilt")
-			.setDesc("Maximum tilt of an orbit plane, in degrees. Zero makes every system flat.")
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 60, 1)
-					.setValue(s.inclinationSpread)
-					.onChange(async (v) => {
-						s.inclinationSpread = v;
-						await commit("inclinationSpread");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Stars")
-			.setDesc(
-				"A note carrying at least this many notes beneath it, counting children and grandchildren and so on, becomes a star of its own and lights everything that orbits it. Set it to 1 to leave only the root of each system as a star."
-			)
-			.addSlider((sl) =>
-				sl
-					.setLimits(1, 60, 1)
-					.setValue(s.starSubtreeSize)
-					.onChange(async (v) => {
-						s.starSubtreeSize = v;
-						await commit("starSubtreeSize");
-					})
-			);
-
-		new Setting(containerEl).setName("Light and shadow").setHeading();
-
-		new Setting(containerEl)
-			.setName("Star brightness")
-			.setDesc("How hard the stars shine on everything orbiting them.")
-			.addSlider((sl) =>
-				sl
-					.setLimits(0.2, 3, 0.1)
-					.setValue(s.starBrightness)
-					.onChange(async (v) => {
-						s.starBrightness = v;
-						await commit("starBrightness");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Light falloff")
-			.setDesc(
-				"How fast light dims with distance: 0 spreads it evenly, 1 is linear, 2 is physically correct inverse-square. Raise it if a body lit by two stars shows two bright patches with a hard seam, so the nearer star wins clearly."
-			)
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 2, 0.1)
-					.setValue(s.lightFalloff)
-					.onChange(async (v) => {
-						s.lightFalloff = v;
-						await commit("lightFalloff");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Nearest star dominates")
-			.setDesc(
-				"Fades down every star but the closest one, so a body is lit from a single direction. Turn it off for true multi-star lighting, though a body sitting between two stars is then lit from both sides, with a dark seam where the two pools of light meet."
-			)
-			.addToggle((tg) =>
-				tg.setValue(s.dominantLighting).onChange(async (v) => {
-					s.dominantLighting = v;
-					await commit("dominantLighting");
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Star halo")
-			.setDesc(
-				"Size of the glow around a star. The halo is cut out around the body itself, so it never lies on top of the surface."
-			)
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 2.5, 0.1)
-					.setValue(s.starGlow)
-					.onChange(async (v) => {
-						s.starGlow = v;
-						await commit("starGlow");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Corona")
-			.setDesc("Density of the plasma motes boiling off a star's surface.")
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 2.5, 0.1)
-					.setValue(s.coronaStrength)
-					.onChange(async (v) => {
-						s.coronaStrength = v;
-						await commit("coronaStrength");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Shadows")
-			.setDesc(
-				"Bodies cast real shadows, so a moon passing behind its planet is genuinely eclipsed. Higher settings are sharper and cost more, and each step lets another star cast."
-			)
-			.addDropdown((d) =>
-				d
-					.addOption("off", "Off")
-					.addOption("low", "Low: 512px, 1 star")
-					.addOption("medium", "Medium: 1024px, 2 stars")
-					.addOption("high", "High: 2048px, 3 stars")
-					.setValue(s.shadowQuality)
-					.onChange(async (v) => {
-						s.shadowQuality = v as ShadowQuality;
-						await commit("shadowQuality");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Shadow depth")
-			.setDesc(
-				"How dark an eclipsed or unlit surface goes. This is the ambient fill, the only light reaching a shadowed face. Higher is more dramatic and makes eclipses obvious, lower keeps night sides readable."
-			)
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 1, 0.05)
-					.setValue(s.shadowDepth)
-					.onChange(async (v) => {
-						s.shadowDepth = v;
-						await commit("shadowDepth");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Light shafts")
-			.setDesc(
-				"Volumetric rays streaming out from the stars, broken by whatever passes in front of them. This is the most expensive effect here, so turn it off first if the frame rate drops."
-			)
-			.addToggle((t) =>
-				t.setValue(s.lightShafts).onChange(async (v) => {
-					s.lightShafts = v;
-					await commit("lightShafts");
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Light shaft strength")
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 1.5, 0.05)
-					.setValue(s.lightShaftStrength)
-					.onChange(async (v) => {
-						s.lightShaftStrength = v;
-						await commit("lightShaftStrength");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Interstellar haze")
-			.setDesc(
-				"Fog through the system. Adds depth and gives the light shafts something to travel through. Zero is clear vacuum."
-			)
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 1.5, 0.05)
-					.setValue(s.fogDensity)
-					.onChange(async (v) => {
-						s.fogDensity = v;
-						await commit("fogDensity");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Glow")
-			.setDesc("Bloom around stars, rings and bright surfaces. Zero turns the effect off entirely.")
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 1.5, 0.05)
-					.setValue(s.glowStrength)
-					.onChange(async (v) => {
-						s.glowStrength = v;
-						await commit("glowStrength");
-					})
-			);
-
-		new Setting(containerEl).setName("Appearance").setHeading();
-
-		new Setting(containerEl)
-			.setName("Surface textures")
-			.setDesc(
-				"Photographic surfaces: cloud bands on giants, craters on rocky notes, ice on leaves. Off gives flat coloured spheres, which is faster on weak hardware."
-			)
-			.addToggle((t) =>
-				t.setValue(s.useTextures).onChange(async (v) => {
-					s.useTextures = v;
-					await commit("useTextures");
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Planetary rings")
-			.setDesc(
-				`Saturn-style rings on notes with ${ICE_GIANT_CHILDREN} or more children.`
-			)
-			.addToggle((t) =>
-				t.setValue(s.showRings).onChange(async (v) => {
-					s.showRings = v;
-					await commit("showRings");
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Particle effects")
-			.setDesc("Star coronas, dust along the asteroid belt, and haze across the system.")
-			.addToggle((t) =>
-				t.setValue(s.showParticles).onChange(async (v) => {
-					s.showParticles = v;
-					await commit("showParticles");
-				})
-			);
-
-		new Setting(containerEl).setName("Show orbit rings").addToggle((t) =>
-			t.setValue(s.showOrbits).onChange(async (v) => {
-				s.showOrbits = v;
-				await commit("showOrbits");
-			})
+			return;
+		}
+		if (control.type === "dropdown") {
+			setting.addDropdown((dropdown) => {
+				for (const [value, label] of Object.entries(control.options)) {
+					dropdown.addOption(value, label);
+				}
+				dropdown
+					.setValue(this.read<string>(spec.key))
+					.onChange((value) => void this.commit(spec.key, value));
+			});
+			return;
+		}
+		setting.addSlider((slider) =>
+			slider
+				.setLimits(control.min, control.max, control.step)
+				.setValue(this.read<number>(spec.key))
+				.onChange((value) => void this.commit(spec.key, value))
 		);
+	}
 
-		new Setting(containerEl)
-			.setName("Show cross-links")
-			.setDesc(
-				"Faint chords for the links the orbits can't express. In link mode that means every link outside the spanning tree."
-			)
-			.addToggle((t) =>
-				t.setValue(s.showCrossLinks).onChange(async (v) => {
-					s.showCrossLinks = v;
-					await commit("showCrossLinks");
-				})
-			);
+	/** Current value of a setting, narrowed to what its control deals in. */
+	private read<T>(key: keyof SolarGraphSettings): T {
+		return this.plugin.settings[key] as T;
+	}
 
-		new Setting(containerEl)
-			.setName("Labels")
-			.addDropdown((d) =>
-				d
-					.addOption("near", "Nearest bodies")
-					.addOption("roots", "Stars and their planets")
-					.addOption("none", "Hover only")
-					.setValue(s.labelMode)
-					.onChange(async (v) => {
-						s.labelMode = v as LabelMode;
-						await commit("labelMode");
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Label budget")
-			.setDesc("How many labels may be on screen at once.")
-			.addSlider((sl) =>
-				sl
-					.setLimits(10, 300, 10)
-					.setValue(s.labelBudget)
-					.onChange(async (v) => {
-						s.labelBudget = v;
-						await commit("labelBudget");
-					})
-			);
-
-		new Setting(containerEl).setName("Interaction").setHeading();
-
-		new Setting(containerEl)
-			.setName("Open note on click")
-			.setDesc(
-				"Ctrl-click opens the note in a new tab. Alt-click rebuilds the system around it."
-			)
-			.addToggle((t) =>
-				t.setValue(s.openOnClick).onChange(async (v) => {
-					s.openOnClick = v;
-					await commit("openOnClick");
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Follow selection")
-			.setDesc("Keep the camera locked on the selected body while it orbits.")
-			.addToggle((t) =>
-				t.setValue(s.followSelection).onChange(async (v) => {
-					s.followSelection = v;
-					await commit("followSelection");
-				})
-			);
-
-		new Setting(containerEl).setName("Performance").setHeading();
-
-		new Setting(containerEl)
-			.setName("Maximum bodies")
-			.setDesc("Vaults larger than this are truncated; the view says so when it happens.")
-			.addSlider((sl) =>
-				sl
-					.setLimits(200, 8000, 100)
-					.setValue(s.maxNodes)
-					.onChange(async (v) => {
-						s.maxNodes = v;
-						await commit("maxNodes");
-					})
-			);
+	private async commit(key: keyof SolarGraphSettings, value: unknown): Promise<void> {
+		// The table pairs each key with a control of the right type, which is the
+		// guarantee this index assignment relies on. SolarGraphSettings has no index
+		// signature, hence the trip through unknown.
+		(this.plugin.settings as unknown as Record<string, unknown>)[key] = value;
+		await this.plugin.saveSettings(key);
 	}
 }

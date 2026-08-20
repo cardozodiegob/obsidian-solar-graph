@@ -149,6 +149,29 @@ pasted on the disc with a seam where it ends. The disc is also held below full w
 or the whole surface passes the bloom threshold and the granulation disappears into a
 flat blob.
 
+## Settings, rendered two ways
+
+Obsidian 1.13 added a declarative settings API: a tab returns `getSettingDefinitions()`
+and Obsidian renders the controls itself, which is also what puts them in the settings
+search index. Older versions know only `display()`, where the tab builds the controls
+by hand.
+
+No version check is needed to support both, and this is worth knowing because it looks
+like it would be: `display()` is documented as *not called when `getSettingDefinitions`
+returns a non-empty array*. Obsidian picks. Implementing both is the whole compatibility
+story, and `minAppVersion` can stay where it is, because defining the method isn't
+calling a newer API.
+
+What does need care is that both paths describe the same 31 settings. They're generated
+from one table (`SETTING_GROUPS`), so they can't drift: the declarative path maps it to
+Obsidian's shape, and `display()` walks it building `Setting` objects.
+
+The other integration point is writes. Obsidian's default `setControlValue` writes to
+`plugin.settings` and persists, which isn't enough here: an open view has to react, and
+how much work a change implies varies from a repaint to a re-layout to re-reading the
+vault. So `setControlValue` is overridden to route through the plugin's own
+`saveSettings(key)`, exactly as the imperative path does.
+
 ## Verifying rendering in a running Obsidian
 
 `npm test` covers the tree building and the layout maths, but not rendering. For that,
